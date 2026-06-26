@@ -19,7 +19,10 @@ export default {
     const query = interaction.options.getFocused();
     const servers = await autocompleteServer(query, db);
     await interaction.respond(
-      servers.map(s => ({ name: `${s.name || s.cfx_code} (${s.cfx_code})`, value: s.cfx_code }))
+      servers.map(s => {
+        const alias = s.alias ? ` [${s.alias.split(',')[0].trim()}]` : '';
+        return { name: `${s.name || s.cfx_code}${alias}`.slice(0, 100), value: s.cfx_code };
+      })
     );
   },
 

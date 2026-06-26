@@ -26,24 +26,30 @@ export default {
 
       if (!servers.length) {
         return interaction.editReply({
-          embeds: [createErrorEmbed('Tidak Ada Server', 'Belum ada server di database. Gunakan `/requestserver` untuk menambahkan.')],
+          embeds: [createErrorEmbed('Tidak Ada Server', 'Belum ada server di database.')],
         });
       }
 
       const lines = servers.map((s, i) => {
         const idx = (curPage - 1) * PER_PAGE + i + 1;
-        return `\`${idx}\` **${s.name || 'Unknown'}** — \`${s.cfx_code}\``;
+        const aliasLine = s.alias
+          ? `\n   └ 🏷️ Alias: \`${s.alias.split(',').map(a => a.trim()).join('` · `')}\``
+          : '';
+        return `**${idx}.** 🟢 **${s.name || 'Unknown'}**\n   └ 📡 \`${s.endpoint || s.cfx_code}\`${aliasLine}`;
       });
 
       const embed = new EmbedBuilder()
         .setColor(config.colors.primary)
         .setTitle('📋 Daftar Server FiveM')
-        .setDescription(`${SEPARATOR}\n\n${lines.join('\n')}\n\n${SEPARATOR}`)
+        .setDescription(
+          `${SEPARATOR}\n\n${lines.join('\n\n')}\n\n${SEPARATOR}\n\n` +
+          `> Ketik nama atau alias server di \`/player\`, \`/checkstatus\`, dll — autocomplete akan muncul!`
+        )
         .addFields(
           { name: '📊 Total Server', value: `\`${total}\``, inline: true },
           { name: '📄 Halaman', value: `\`${curPage}/${totalPages || 1}\``, inline: true },
         )
-        .setFooter({ text: `${config.bot.name} • Gunakan /checkstatus untuk cek server` })
+        .setFooter({ text: `${config.bot.name} • Gunakan /checkstatus untuk cek status server` })
         .setTimestamp();
 
       const row = new ActionRowBuilder().addComponents(

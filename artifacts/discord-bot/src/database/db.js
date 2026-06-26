@@ -16,8 +16,6 @@ function getSqlJs() {
   return initSqlJs();
 }
 
-let _sqlJsDb = null;
-
 function wrapDb(sqliteDb) {
   return {
     prepare(sql) {
@@ -78,6 +76,7 @@ export async function initDb() {
   db = wrapDb(sqliteDb);
 
   initSchema();
+  seedServers();
   logger.info(`[Database] Connected: ${dbPath}`);
 
   // Auto-persist every 30 seconds
@@ -103,47 +102,14 @@ function initSchema() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS subscription (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      discord_id TEXT UNIQUE NOT NULL,
-      plan TEXT NOT NULL DEFAULT 'free',
-      expires_at DATETIME,
-      is_active INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS payments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      discord_id TEXT NOT NULL,
-      plan TEXT NOT NULL,
-      amount INTEGER NOT NULL,
-      status TEXT DEFAULT 'pending',
-      proof_url TEXT,
-      admin_note TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
     CREATE TABLE IF NOT EXISTS servers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       cfx_code TEXT UNIQUE NOT NULL,
       name TEXT,
+      alias TEXT,
       endpoint TEXT,
       is_active INTEGER DEFAULT 1,
       added_by TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS redeem (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT UNIQUE NOT NULL,
-      plan TEXT NOT NULL,
-      duration_days INTEGER,
-      is_used INTEGER DEFAULT 0,
-      used_by TEXT,
-      used_at DATETIME,
-      created_by TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -172,7 +138,93 @@ function initSchema() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Migrate: add alias column if not exists (for existing DBs)
+  try { db.exec(`ALTER TABLE servers ADD COLUMN alias TEXT`); } catch {}
+  // Migrate: add endpoint column if not exists
+  try { db.exec(`ALTER TABLE servers ADD COLUMN endpoint TEXT`); } catch {}
+
   logger.info('[Database] Schema initialized');
+}
+
+const SEED_SERVERS = [
+  {
+    cfx_code: '49.128.187.46:30120',
+    name: 'Satumimpi',
+    alias: 'satumimpi,satu mimpi,smrp',
+    endpoint: '49.128.187.46:30120',
+  },
+  {
+    cfx_code: '160.187.141.169:30120',
+    name: 'Kampoeng RP',
+    alias: 'kampoengrp,kampoeng rp,kampung rp,krp',
+    endpoint: '160.187.141.169:30120',
+  },
+  {
+    cfx_code: '49.128.187.82:30120',
+    name: 'Kisah Nusantara',
+    alias: 'kisahnusantara,kisah nusantara,kisa,knrp',
+    endpoint: '49.128.187.82:30120',
+  },
+  {
+    cfx_code: '49.128.187.110:30120',
+    name: 'Nusa V',
+    alias: 'nusav,nusa v,nusa5',
+    endpoint: '49.128.187.110:30120',
+  },
+  {
+    cfx_code: '31.58.143.101:30120',
+    name: 'Kota Kita',
+    alias: 'kotakita,kota kita,kkrp',
+    endpoint: '31.58.143.101:30120',
+  },
+  {
+    cfx_code: '31.58.143.12:30120',
+    name: 'ASE STATE',
+    alias: 'asestate,ase state,ase',
+    endpoint: '31.58.143.12:30120',
+  },
+  {
+    cfx_code: '49.128.187.58:30120',
+    name: 'Garuda Prime',
+    alias: 'garudaprime,garuda prime,garuda,gprp',
+    endpoint: '49.128.187.58:30120',
+  },
+  {
+    cfx_code: '49.128.187.86:30120',
+    name: 'Rumah Kita',
+    alias: 'rumahkita,rumah kita,rkrp',
+    endpoint: '49.128.187.86:30120',
+  },
+  {
+    cfx_code: 'kota.indopride.id:30120',
+    name: 'Indopride',
+    alias: 'indopride,indo pride,idrp',
+    endpoint: 'kota.indopride.id:30120',
+  },
+  {
+    cfx_code: 'private-placeholder.cfx.re',
+    name: 'IME',
+    alias: 'ime',
+    endpoint: 'private-placeholder.cfx.re',
+  },
+];
+
+function seedServers() {
+  for (const s of SEED_SERVERS) {
+    try {
+      db.prepare(
+        `INSERT OR IGNORE INTO servers (cfx_code, name, alias, endpoint, is_active, added_by)
+         VALUES (?, ?, ?, ?, 1, 'system')`
+      ).run(s.cfx_code, s.name, s.alias, s.endpoint);
+
+      // Update alias/name if server already exists (keeps endpoint fresh)
+      db.prepare(
+        `UPDATE servers SET name = ?, alias = ?, endpoint = ? WHERE cfx_code = ?`
+      ).run(s.name, s.alias, s.endpoint, s.cfx_code);
+    } catch {}
+  }
+  logger.info('[Database] Servers seeded');
 }
 
 export default getDb;

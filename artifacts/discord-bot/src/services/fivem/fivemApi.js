@@ -19,6 +19,18 @@ async function withRetry(fn, retries = config.fivem.retries) {
   }
 }
 
+/** Build base URL for a given endpoint (IP:port, domain:port, or private CFX URL) */
+export function buildBaseUrl(endpoint) {
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint.replace(/\/$/, '');
+  }
+  // Private CFX server (e.g. xxx.cfx.re) — use HTTPS
+  if (endpoint.includes('.cfx.re')) {
+    return `https://${endpoint}`;
+  }
+  return `http://${endpoint}`;
+}
+
 export async function fetchServerInfo(cfxCode) {
   return withRetry(async () => {
     const url = `${config.fivem.apiBase}/${cfxCode}`;
@@ -29,24 +41,24 @@ export async function fetchServerInfo(cfxCode) {
 
 export async function fetchPlayers(endpoint) {
   return withRetry(async () => {
-    const url = `http://${endpoint}/players.json`;
-    const res = await client.get(url);
+    const base = buildBaseUrl(endpoint);
+    const res = await client.get(`${base}/players.json`);
     return Array.isArray(res.data) ? res.data : [];
   });
 }
 
 export async function fetchServerDetails(endpoint) {
   return withRetry(async () => {
-    const url = `http://${endpoint}/info.json`;
-    const res = await client.get(url);
+    const base = buildBaseUrl(endpoint);
+    const res = await client.get(`${base}/info.json`);
     return res.data;
   });
 }
 
 export async function fetchDynamicInfo(endpoint) {
   return withRetry(async () => {
-    const url = `http://${endpoint}/dynamic.json`;
-    const res = await client.get(url);
+    const base = buildBaseUrl(endpoint);
+    const res = await client.get(`${base}/dynamic.json`);
     return res.data;
   });
 }
