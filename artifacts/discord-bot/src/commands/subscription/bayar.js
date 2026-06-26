@@ -1,69 +1,46 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { config } from '../../config/config.js';
 import { SEPARATOR } from '../../utils/embed.js';
-import { getDb } from '../../database/db.js';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('bayar')
-    .setDescription('💳 Lakukan pembayaran QRIS')
-    .addStringOption(opt =>
-      opt.setName('paket')
-        .setDescription('Pilih paket subscription')
-        .setRequired(true)
-        .addChoices(
-          { name: '📦 1 Bulan', value: '1month' },
-          { name: '📦 3 Bulan', value: '3months' },
-          { name: '♾️ Lifetime', value: 'lifetime' },
-        )
-    ),
-  cooldown: 5,
+    .setDescription('💳 Tampilkan QRIS untuk donasi / support bot'),
+  cooldown: 10,
 
   async execute(interaction) {
-    const paket = interaction.options.getString('paket');
-    const { prices, qrisImageUrl } = config.payment;
-    const price = prices[paket];
-
-    const labels = { '1month': '1 Bulan', '3months': '3 Bulan', lifetime: 'Lifetime' };
-    const label = labels[paket];
-
-    const db = getDb();
-    db.prepare(`
-      INSERT INTO payments (discord_id, plan, amount, status)
-      VALUES (?, ?, ?, 'pending')
-    `).run(interaction.user.id, paket, price);
+    const { qrisImageUrl } = config.payment;
 
     const embed = new EmbedBuilder()
-      .setColor(config.colors.warning)
-      .setTitle('💳 Pembayaran QRIS')
-      .setDescription(`${SEPARATOR}\n\n📦 Paket: **${label}**\n💰 Nominal: **Rp ${price.toLocaleString('id-ID')}**\n\n${SEPARATOR}`)
+      .setColor(config.colors.primary)
+      .setTitle('💳 Support STRONAUT Bot')
+      .setDescription(
+        `${SEPARATOR}\n\nTerima kasih sudah menggunakan **STRONAUT Bot**!\n\nJika kamu merasa bot ini berguna, kamu bisa support pengembangan bot dengan scan QRIS di bawah ini.\n\n${SEPARATOR}`
+      )
       .addFields(
         {
-          name: '📝 Cara Bayar',
+          name: '📝 Cara Donasi',
           value: [
-            `1️⃣ Scan QRIS di bawah`,
-            `2️⃣ Transfer tepat **Rp ${price.toLocaleString('id-ID')}**`,
-            `3️⃣ Screenshot bukti bayar`,
-            `4️⃣ Kirim screenshot ke admin`,
+            '1️⃣ Scan QRIS menggunakan aplikasi e-wallet/bank apapun',
+            '2️⃣ Masukkan nominal sesuai kemampuan kamu',
+            '3️⃣ Selesaikan pembayaran',
+            '4️⃣ Terima kasih! 🙏',
           ].join('\n'),
         },
         {
-          name: '⚠️ Penting',
-          value: 'Transfer **tepat** sesuai nominal agar mudah diverifikasi.\nPembayaran diverifikasi dalam **1×24 jam**.',
+          name: '💡 Info',
+          value: 'Donasi bersifat **sukarela** dan tidak wajib.\nSemua fitur bot tetap **gratis untuk semua**.',
         },
       )
-      .setFooter({ text: `${config.bot.name} • ${interaction.user.tag}` })
+      .setFooter({ text: `${config.bot.name} • Support Kami` })
       .setTimestamp();
 
-    if (qrisImageUrl) embed.setImage(qrisImageUrl);
+    if (qrisImageUrl) {
+      embed.setImage(qrisImageUrl);
+    } else {
+      embed.addFields({ name: '⚠️ QRIS', value: 'QRIS belum dikonfigurasi oleh admin.' });
+    }
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`konfirm:${paket}`)
-        .setLabel('✅ Sudah Bayar — Kirim Bukti')
-        .setStyle(ButtonStyle.Success),
-    );
-
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    await interaction.reply({ embeds: [embed] });
   },
 };

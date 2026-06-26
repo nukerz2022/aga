@@ -11,29 +11,26 @@ export default {
   async execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor(config.colors.primary)
-      .setTitle('🎮 STRONAUT — FiveM Player Finder')
-      .setDescription(`Cari pemain FiveM dengan mudah dan cepat\n${SEPARATOR}`)
+      .setTitle('🤖 STRONAUT — Command List')
+      .setDescription(`Bot serba guna untuk gaming — FiveM, SA-MP, Steam, Minecraft & more\n${SEPARATOR}`)
       .addFields(
         {
-          name: '🔍 Pencarian Player',
+          name: '🎮 FiveM — Player Finder',
           value: [
-            '`/allplayer <server>` — Lihat semua player online',
             '`/player <server> <nama>` — Cari player berdasarkan nama',
-            '`/id <server> <id>` — Cari player berdasarkan ID',
-            '`/loop <server> <nama> <interval>` — Auto monitoring player',
-            '`/stoploop` — Menghentikan monitoring',
+            '`/id <server> <id>` — Cari player berdasarkan server ID',
+            '`/allplayer <server>` — Lihat semua player online',
+            '`/loop <server> <nama> [interval]` — Auto monitor player',
+            '`/stoploop` — Hentikan monitoring',
           ].join('\n'),
         },
         {
-          name: SEPARATOR,
-          value: '\u200B',
-        },
-        {
-          name: '📡 Server Status',
+          name: '📡 FiveM — Server Status',
           value: [
-            '`/checkstatus <server>` — Status server',
+            '`/checkstatus <server>` — Status server (online/offline)',
             '`/serverstatus <server>` — Detail lengkap server',
-            '`/serverlist` — Daftar server yang tersedia',
+            '`/serverlist` — Daftar server tersedia',
+            '`/requestserver` — Request tambah server baru',
           ].join('\n'),
         },
         {
@@ -41,13 +38,13 @@ export default {
           value: '\u200B',
         },
         {
-          name: '💎 Subscription',
+          name: '🎯 Gaming Tools',
           value: [
-            '`/subscribe` — Informasi paket',
-            '`/bayar` — Pembayaran QRIS',
-            '`/redeem` — Redeem code',
-            '`/ceklangganan` — Status subscription',
-            '`/history` — Riwayat pembayaran',
+            '`/steam <id/url>` — Cek profil Steam (VAC ban, status, dll)',
+            '`/samp <ip> [port]` — Query server SA-MP / Open.MP',
+            '`/minecraft <host> [port]` — Cek server Minecraft Java/Bedrock',
+            '`/gameserver <ip> <port> <game>` — Query server CS2/Rust/ARK/dll',
+            '`/geoip <ip>` — Cek lokasi & info IP address',
           ].join('\n'),
         },
         {
@@ -55,11 +52,21 @@ export default {
           value: '\u200B',
         },
         {
-          name: '🛠 Lainnya',
+          name: '💳 Support',
           value: [
-            '`/ping` — Bot latency',
-            '`/support` — Discord Support',
-            '`/requestserver` — Request server baru',
+            '`/bayar` — Donasi via QRIS',
+            '`/support` — Link support server Discord',
+          ].join('\n'),
+        },
+        {
+          name: SEPARATOR,
+          value: '\u200B',
+        },
+        {
+          name: '🛠 General',
+          value: [
+            '`/ping` — Cek latency bot',
+            '`/help` — Tampilkan menu ini',
           ].join('\n'),
         },
         {
@@ -67,18 +74,18 @@ export default {
           value: '\u200B',
         },
       )
-      .setFooter({ text: `${config.bot.name} • v${config.bot.version}` })
+      .setFooter({ text: `${config.bot.name} • v${config.bot.version} • Semua command gratis!` })
       .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
+        .setLabel('💳 Donasi QRIS')
+        .setStyle(ButtonStyle.Success)
+        .setCustomId('help:subscribe'),
+      new ButtonBuilder()
         .setLabel('🔗 Support Server')
         .setStyle(ButtonStyle.Link)
         .setURL(config.discord.supportServer),
-      new ButtonBuilder()
-        .setLabel('💎 Subscribe')
-        .setStyle(ButtonStyle.Primary)
-        .setCustomId('help:subscribe'),
     );
 
     await interaction.reply({ embeds: [embed], components: [row] });
