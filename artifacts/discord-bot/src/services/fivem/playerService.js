@@ -5,19 +5,18 @@ import logger from '../../utils/logger.js';
 import { getDb } from '../../database/db.js';
 
 /**
- * Resolve an alias or cfx_code to an { endpoint, name } from the DB.
- * Returns null if not found.
+ * Resolve an alias or cfx_code to a DB row.
  */
 function resolveFromDb(input) {
   try {
     const db = getDb();
     const lower = input.toLowerCase().trim();
 
-    // Try exact cfx_code match first
+    // Exact cfx_code match
     let row = db.prepare(`SELECT * FROM servers WHERE cfx_code = ? AND is_active = 1`).get(input);
     if (row) return row;
 
-    // Try alias match
+    // Alias match
     const servers = db.prepare(`SELECT * FROM servers WHERE is_active = 1`).all();
     for (const s of servers) {
       if (!s.alias) continue;
@@ -36,75 +35,92 @@ function resolveFromDb(input) {
 }
 
 /**
- * Determine if input is a direct endpoint (IP:port or domain:port or CFX private URL).
- * If so, return the endpoint string. Otherwise null.
+ * Check if input looks like a direct endpoint (IP:port or domain:port or CFX private URL).
  */
 function asDirectEndpoint(input) {
-  // IP:port
   if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(input)) return input;
-  // domain:port
   if (/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:\d+$/.test(input)) return input;
-  // private CFX URL
   if (/\.cfx\.re/.test(input)) return input.replace(/^https?:\/\//, '').replace(/\/$/, '');
   return null;
 }
 
+/**
+ * Resolve input → { serverData, endpoint, name }
+ * Priority: DB alias → FiveM API (via endpoint as code) → direct endpoint → FiveM API (standard cfxCode)
+ */
 export async function getServerEndpoint(input) {
   const cacheKey = `server:${input}`;
   if (serverCache.has(cacheKey)) return serverCache.get(cacheKey);
 
-  // 1. Resolve from DB (alias / cfx_code)
+  // 1. Resolve from DB
   const dbRow = resolveFromDb(input);
-  if (dbRow?.endpoint) {
-    const endpoint = dbRow.endpoint;
+  const endpoint = dbRow?.endpoint || asDirectEndpoint(input);
+
+  if (endpoint) {
+    // Try FiveM master server API with endpoint as identifier (HTTPS — works on Replit)
+    try {
+      const serverData = await fetchServerInfo(endpoint);
+      if (serverData?.Data) {
+        const result = { serverData, endpoint, name: dbRow?.name };
+        serverCache.set(cacheKey, result, config.cache.serverTtl);
+        return result;
+      }
+    } catch (err) {
+      logger.warn(`[PlayerService] FiveM API failed for ${endpoint}: ${err.message}`);
+    }
+
+    // FiveM API didn't have it — return basic info (direct connection will be attempted for players)
     const result = {
       serverData: {
         Data: {
-          hostname: dbRow.name || endpoint,
+          hostname: dbRow?.name || endpoint,
           connectEndPoints: [endpoint],
+          clients: 0,
+          sv_maxclients: 64,
         },
       },
       endpoint,
-      name: dbRow.name,
+      name: dbRow?.name,
     };
     serverCache.set(cacheKey, result, config.cache.serverTtl);
     return result;
   }
 
-  // 2. Direct endpoint (IP:port or domain:port)
-  const directEndpoint = asDirectEndpoint(input);
-  if (directEndpoint) {
-    const result = {
-      serverData: {
-        Data: {
-          hostname: directEndpoint,
-          connectEndPoints: [directEndpoint],
-        },
-      },
-      endpoint: directEndpoint,
-    };
-    serverCache.set(cacheKey, result, config.cache.serverTtl);
-    return result;
-  }
-
-  // 3. Fall back to FiveM API
+  // 2. Standard FiveM API with cfxCode
   const serverData = await fetchServerInfo(input);
-  const endpoint = serverData?.Data?.connectEndPoints?.[0];
-  if (!endpoint) throw new Error('Endpoint server tidak ditemukan');
+  const ep = serverData?.Data?.connectEndPoints?.[0];
+  if (!ep) throw new Error('Endpoint server tidak ditemukan di FiveM API');
 
-  const result = { serverData, endpoint };
+  const result = { serverData, endpoint: ep };
   serverCache.set(cacheKey, result, config.cache.serverTtl);
   return result;
 }
 
+/**
+ * Get all players for a server.
+ * First tries to use Data.players from FiveM API (no port 30120 needed).
+ * Falls back to direct /players.json if API data is unavailable.
+ */
 export async function getAllPlayers(input) {
   const cacheKey = `players:${input}`;
   if (playerCache.has(cacheKey)) return playerCache.get(cacheKey);
 
-  const { serverData, endpoint } = await getServerEndpoint(input);
-  const players = await fetchPlayers(endpoint);
+  const { serverData, endpoint, name } = await getServerEndpoint(input);
 
-  const result = { players, serverData, endpoint };
+  // Prefer player list from FiveM master server API (avoids direct port connection)
+  let players = serverData?.Data?.players;
+
+  if (!Array.isArray(players) || players.length === 0) {
+    // Fallback: try direct HTTP to game server
+    try {
+      players = await fetchPlayers(endpoint);
+    } catch (err) {
+      logger.warn(`[PlayerService] Direct fetch failed for ${endpoint}: ${err.message}`);
+      players = [];
+    }
+  }
+
+  const result = { players, serverData, endpoint, name };
   playerCache.set(cacheKey, result, config.cache.ttl);
   return result;
 }

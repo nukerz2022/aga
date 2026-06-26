@@ -12,10 +12,17 @@ export async function getServerStatus(input) {
     const { serverData, endpoint, name } = await getServerEndpoint(input);
     const sv = serverData?.Data;
 
-    let players = [];
+    // Player count: prefer API data, fallback to direct
+    let players = sv?.players;
+    if (!Array.isArray(players) || players.length === 0) {
+      try { players = await fetchPlayers(endpoint); } catch { players = []; }
+    }
+
     let dynamic = {};
-    try { players = await fetchPlayers(endpoint); } catch {}
     try { dynamic = await fetchDynamicInfo(endpoint); } catch {}
+
+    const playerCount = sv?.clients ?? players.length;
+    const maxPlayers = sv?.sv_maxclients ?? dynamic?.sv_maxclients ?? 64;
 
     const result = {
       online: true,
@@ -25,8 +32,8 @@ export async function getServerStatus(input) {
       players,
       dynamic,
       hostname: sv?.hostname?.replace(/\^[0-9]/g, '') || name || endpoint,
-      playerCount: sv?.clients ?? players.length,
-      maxPlayers: sv?.sv_maxclients ?? dynamic?.sv_maxclients ?? 64,
+      playerCount,
+      maxPlayers,
       oneSync: sv?.vars?.onesync_enabled === 'true',
     };
 
@@ -53,7 +60,6 @@ export function formatServerStatus(status) {
     const filled = Math.min(10, Math.round((count / max) * 10));
     return '█'.repeat(filled) + '░'.repeat(10 - filled);
   };
-
   if (!status.online) return null;
   return {
     name: status.hostname,
