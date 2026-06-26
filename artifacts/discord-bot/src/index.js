@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { loadButtons, loadSelectMenus, loadModals } from './handlers/buttonHandler.js';
-import { getDb } from './database/db.js';
+import { initDb } from './database/db.js';
 import logger from './utils/logger.js';
 import { config } from './config/config.js';
 
@@ -26,7 +26,7 @@ const client = new Client({
 async function bootstrap() {
   logger.info(`[Bot] Starting ${config.bot.name} v${config.bot.version}...`);
 
-  getDb();
+  await initDb();
 
   await loadCommands(client);
   await loadEvents(client);
@@ -38,7 +38,7 @@ async function bootstrap() {
 }
 
 process.on('unhandledRejection', (err) => {
-  logger.error(`[UnhandledRejection] ${err.message}`, { stack: err?.stack });
+  logger.error(`[UnhandledRejection] ${err?.message ?? err}`, { stack: err?.stack });
 });
 
 process.on('uncaughtException', (err) => {

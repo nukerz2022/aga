@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/home/runner/workspace/artifacts/discord-bot/src/logs/.e53b24fd3b4d3e632a284e8af9095c46c23028d1-audit.json",
+    "files": [
+        {
+            "date": 1782478485708,
+            "name": "/home/runner/workspace/artifacts/discord-bot/src/logs/error-2026-06-26.log",
+            "hash": "80ac8383497ef1f3d0b354d7bbdc076904c2b57fcd3ac569df5fbf0b7fbc5a5b"
+        }
+    ],
+    "hashType": "sha256"
+}

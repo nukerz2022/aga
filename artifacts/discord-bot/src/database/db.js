@@ -1,26 +1,95 @@
-import Database from 'better-sqlite3';
+import { createRequire } from 'module';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { config } from '../config/config.js';
 import logger from '../utils/logger.js';
 
+const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.resolve(__dirname, '../../', config.database.path.replace('./', ''));
-
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+const dbPath = path.resolve(__dirname, '../../database.sqlite');
 
 let db;
 
-export function getDb() {
-  if (!db) {
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    logger.info(`[Database] Connected: ${dbPath}`);
-    initSchema();
+function getSqlJs() {
+  const initSqlJs = require('sql.js');
+  return initSqlJs();
+}
+
+let _sqlJsDb = null;
+
+function wrapDb(sqliteDb) {
+  return {
+    prepare(sql) {
+      return {
+        run(...args) {
+          sqliteDb.run(sql, args);
+        },
+        get(...args) {
+          const stmt = sqliteDb.prepare(sql);
+          stmt.bind(args);
+          if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row;
+          }
+          stmt.free();
+          return undefined;
+        },
+        all(...args) {
+          const stmt = sqliteDb.prepare(sql);
+          const rows = [];
+          stmt.bind(args);
+          while (stmt.step()) rows.push(stmt.getAsObject());
+          stmt.free();
+          return rows;
+        },
+      };
+    },
+    exec(sql) {
+      sqliteDb.run(sql);
+    },
+    close() {
+      const data = sqliteDb.export();
+      fs.writeFileSync(dbPath, Buffer.from(data));
+      sqliteDb.close();
+    },
+    _raw: sqliteDb,
+    _persist() {
+      const data = sqliteDb.export();
+      fs.writeFileSync(dbPath, Buffer.from(data));
+    },
+  };
+}
+
+export async function initDb() {
+  if (db) return db;
+
+  const SQL = await getSqlJs();
+
+  let sqliteDb;
+  if (fs.existsSync(dbPath)) {
+    const fileBuffer = fs.readFileSync(dbPath);
+    sqliteDb = new SQL.Database(fileBuffer);
+  } else {
+    sqliteDb = new SQL.Database();
   }
+
+  db = wrapDb(sqliteDb);
+
+  initSchema();
+  logger.info(`[Database] Connected: ${dbPath}`);
+
+  // Auto-persist every 30 seconds
+  setInterval(() => {
+    try { db._persist(); } catch {}
+  }, 30000);
+
+  return db;
+}
+
+export function getDb() {
+  if (!db) throw new Error('Database not initialized. Call initDb() first.');
   return db;
 }
 
