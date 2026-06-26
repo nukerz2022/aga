@@ -1,0 +1,24 @@
+{
+  "name": "@workspace/discord-bot",
+  "version": "5.0.0",
+  "description": "FiveM Player Finder V5 - Premium Discord Bot",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy": "node deploy.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "better-sqlite3": "^11.7.0",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

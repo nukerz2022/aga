@@ -1,0 +1,795 @@
+# FiveM Player Finder V5 - Discord Bot Prompt
+
+
+
+Bertindak sebagai Senior Node.js Developer, Discord.js v14 Expert, dan Software Architect.
+
+
+
+Buatkan Discord Bot premium bernama **FiveM Player Finder V5** menggunakan:
+
+
+
+* Node.js 22 LTS
+
+* discord.js v14 terbaru
+
+* SQLite (mudah migrasi ke MySQL)
+
+* Axios
+
+* Slash Command
+
+* Button
+
+* Select Menu
+
+* Modal
+
+* Embed Modern
+
+* Component Collector
+
+* Event Handler
+
+* Command Handler
+
+* Cooldown
+
+* Logger
+
+* Error Handler
+
+* Permission System
+
+* Environment (.env)
+
+
+
+Gunakan Clean Architecture.
+
+
+
+Semua command harus dipisahkan menjadi file masing-masing.
+
+
+
+Jangan menggunakan code deprecated.
+
+
+
+================================================
+
+
+
+## TAMPILAN BOT
+
+
+
+Gunakan Embed Discord modern.
+
+
+
+Color:
+
+Primary : #8B5CF6
+
+Success : #22C55E
+
+Danger : #EF4444
+
+Warning : #F59E0B
+
+
+
+Footer
+
+
+
+FiveM Player Finder V5
+
+
+
+Thumbnail Logo Bot
+
+
+
+Timestamp aktif
+
+
+
+Semua menu menggunakan emoji.
+
+
+
+================================================
+
+
+
+## MENU HELP
+
+
+
+Saat user menjalankan
+
+
+
+/help
+
+
+
+Bot menampilkan embed seperti ini
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+🎮 FiveM Player Finder
+
+
+
+Cari pemain FiveM dengan mudah dan cepat
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+📋 Pencarian Player (Premium)
+
+
+
+`/allplayer <server>`
+
+Lihat semua player online
+
+
+
+`/player <server> <nama>`
+
+Cari player berdasarkan nama
+
+
+
+`/id <server> <id>`
+
+Cari player berdasarkan ID
+
+
+
+`/loop <server> <nama> <interval>`
+
+Auto monitoring player
+
+
+
+`/stoploop`
+
+Menghentikan monitoring
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+💎 Subscription
+
+
+
+`/subscribe`
+
+Informasi paket
+
+
+
+`/bayar`
+
+Pembayaran QRIS
+
+
+
+`/redeem`
+
+Redeem code
+
+
+
+`/ceklangganan`
+
+Status subscription
+
+
+
+`/history`
+
+Riwayat pembayaran
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+🆓 Free Commands
+
+
+
+`/checkstatus`
+
+Status server
+
+
+
+`/serverstatus`
+
+Detail server
+
+
+
+`/serverlist`
+
+Daftar server
+
+
+
+`/ping`
+
+Bot latency
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+🛠 Developer
+
+
+
+`/dev`
+
+Developer Info
+
+
+
+`/support`
+
+Discord Support
+
+
+
+`/requestserver`
+
+Request server baru
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+================================================
+
+
+
+FITUR
+
+
+
+Player Finder
+
+
+
+/player
+
+
+
+/id
+
+
+
+/allplayer
+
+
+
+/loop
+
+
+
+/stoploop
+
+
+
+Server Status
+
+
+
+/checkstatus
+
+
+
+/serverstatus
+
+
+
+/serverlist
+
+
+
+Subscription
+
+
+
+/subscribe
+
+
+
+/redeem
+
+
+
+/history
+
+
+
+Developer
+
+
+
+/dev
+
+
+
+/help
+
+
+
+================================================
+
+
+
+PLAYER RESULT
+
+
+
+Jika player ditemukan tampilkan
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+🟢 PLAYER FOUND
+
+
+
+👤 Nama
+
+
+
+🆔 Server ID
+
+
+
+🎮 Server
+
+
+
+📶 Ping
+
+
+
+🕒 Join Time
+
+
+
+💬 Discord
+
+
+
+🎯 Steam
+
+
+
+🔑 License
+
+
+
+🌐 Endpoint
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+Jika tidak ditemukan
+
+
+
+Embed merah
+
+
+
+❌ Player tidak ditemukan
+
+
+
+================================================
+
+
+
+SERVER RESULT
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+🟢 SERVER ONLINE
+
+
+
+Nama Server
+
+
+
+Player
+
+
+
+Max Player
+
+
+
+Queue
+
+
+
+Ping
+
+
+
+CPU
+
+
+
+RAM
+
+
+
+OneSync
+
+
+
+Country
+
+
+
+IP
+
+
+
+Connect
+
+
+
+Logo
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+================================================
+
+
+
+BUTTON
+
+
+
+Subscribe
+
+
+
+Support Server
+
+
+
+Website
+
+
+
+Dashboard
+
+
+
+Refresh
+
+
+
+Next Page
+
+
+
+Previous Page
+
+
+
+================================================
+
+
+
+DATABASE
+
+
+
+users
+
+
+
+subscription
+
+
+
+payments
+
+
+
+servers
+
+
+
+redeem
+
+
+
+logs
+
+
+
+loopfinder
+
+
+
+================================================
+
+
+
+PROJECT STRUCTURE
+
+
+
+src/
+
+
+
+commands/
+
+
+
+events/
+
+
+
+handlers/
+
+
+
+services/
+
+
+
+database/
+
+
+
+middlewares/
+
+
+
+utils/
+
+
+
+config/
+
+
+
+buttons/
+
+
+
+embeds/
+
+
+
+modals/
+
+
+
+selectmenus/
+
+
+
+assets/
+
+
+
+logs/
+
+
+
+================================================
+
+
+
+BONUS
+
+
+
+Auto Status
+
+
+
+Activity berubah setiap 30 detik
+
+
+
+Cache Server
+
+
+
+Retry API
+
+
+
+Webhook Payment
+
+
+
+Pagination
+
+
+
+Autocomplete Server
+
+
+
+Autocomplete Player
+
+
+
+Search History
+
+
+
+Premium Checker
+
+
+
+Permission Checker
+
+
+
+Command Logger
+
+
+
+Error Logger
+
+
+
+Monitoring Logger
+
+
+
+================================================
+
+
+
+Buat project secara bertahap.
+
+
+
+Tahap 1
+
+Struktur folder lengkap.
+
+
+
+Tahap 2
+
+package.json
+
+
+
+Tahap 3
+
+Config
+
+
+
+Tahap 4
+
+Database
+
+
+
+Tahap 5
+
+Command Handler
+
+
+
+Tahap 6
+
+Event Handler
+
+
+
+Tahap 7
+
+Semua Slash Command
+
+
+
+Tahap 8
+
+Payment
+
+
+
+Tahap 9
+
+Deploy
+
+
+
+Jangan pernah menggabungkan semua code dalam satu file.
+
+
+
+Jika satu file melebihi 300 baris maka pecah menjadi module baru.
+
+
+
+Selalu kirim source code lengkap untuk setiap file.
+
+
+
+Pastikan project dapat langsung dijalankan dengan:
+
+
+
+npm install
+
+
+
+npm run deploy
+
+
+
+npm start
+
+
+
+Tanpa error. Gunakan Discord.js v14 terbaru d
+
+Buat UI embed yang minimalis seperti aplikasi modern (Discord Nitro style).
+
+Pisahkan seluruh logika API FiveM ke folder services/fivem/ agar mudah mengganti endpoint jika API berubah.
+
+Tambahkan sistem cache, rate limiting, logging, dan error handling yang rapi.
+
+Buat seluruh proyek siap dijalankan di Railway, VPS, Docker, dan PM2.
+
+Sertakan unit test dasar untuk service dan utilitas utama. 
