@@ -1,5 +1,4 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { requirePremium } from '../../middlewares/premiumChecker.js';
 import { findPlayerByName, autocompleteServer } from '../../services/fivem/playerService.js';
 import { createErrorEmbed, createSuccessEmbed, createWarningEmbed, SEPARATOR } from '../../utils/embed.js';
 import { config } from '../../config/config.js';
@@ -38,9 +37,6 @@ export default {
   },
 
   async execute(interaction) {
-    const { isPremium, embed: premiumEmbed } = requirePremium(interaction);
-    if (!isPremium) return interaction.reply({ embeds: [premiumEmbed], ephemeral: true });
-
     const db = getDb();
     const cfx = interaction.options.getString('server');
     const nama = interaction.options.getString('nama');

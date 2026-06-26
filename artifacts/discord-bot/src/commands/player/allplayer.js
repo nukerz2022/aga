@@ -1,5 +1,4 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { requirePremium } from '../../middlewares/premiumChecker.js';
 import { getAllPlayers, autocompleteServer } from '../../services/fivem/playerService.js';
 import { createErrorEmbed, createPaginationEmbed, SEPARATOR } from '../../utils/embed.js';
 import { config } from '../../config/config.js';
@@ -29,9 +28,6 @@ export default {
   },
 
   async execute(interaction) {
-    const { isPremium, embed: premiumEmbed } = requirePremium(interaction);
-    if (!isPremium) return interaction.reply({ embeds: [premiumEmbed], ephemeral: true });
-
     const cfx = interaction.options.getString('server');
     const page = interaction.options.getInteger('halaman') || 1;
 

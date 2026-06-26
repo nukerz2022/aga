@@ -10,7 +10,7 @@ export const config = {
     supportServerId: process.env.SUPPORT_SERVER_ID,
   },
   bot: {
-    name: process.env.BOT_NAME || 'FiveM Player Finder V5',
+    name: process.env.BOT_NAME || 'STRONAUT',
     version: process.env.BOT_VERSION || '5.0.0',
   },
   database: {

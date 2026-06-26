@@ -1,7 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { requirePremium } from '../../middlewares/premiumChecker.js';
 import { findPlayerById, autocompleteServer } from '../../services/fivem/playerService.js';
-import { createPlayerFoundEmbed, createPlayerNotFoundEmbed, createLoadingEmbed, createErrorEmbed } from '../../utils/embed.js';
+import { createPlayerFoundEmbed, createPlayerNotFoundEmbed, createErrorEmbed } from '../../utils/embed.js';
 import { getDb } from '../../database/db.js';
 
 export default {
@@ -26,9 +25,6 @@ export default {
   },
 
   async execute(interaction) {
-    const { isPremium, embed: premiumEmbed } = requirePremium(interaction);
-    if (!isPremium) return interaction.reply({ embeds: [premiumEmbed], ephemeral: true });
-
     const cfx = interaction.options.getString('server');
     const playerId = interaction.options.getInteger('player_id');
 

@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { requireOwner } from '../../middlewares/permissionChecker.js';
 import { config } from '../../config/config.js';
 import { SEPARATOR } from '../../utils/embed.js';
 
@@ -9,6 +10,9 @@ export default {
   cooldown: 10,
 
   async execute(interaction, client) {
+    const { allowed, embed: ownerEmbed } = requireOwner(interaction);
+    if (!allowed) return interaction.reply({ embeds: [ownerEmbed], ephemeral: true });
+
     const guilds = client.guilds.cache.size;
     let totalUsers = 0;
     client.guilds.cache.forEach(g => { totalUsers += g.memberCount; });

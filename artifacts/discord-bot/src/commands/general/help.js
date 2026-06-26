@@ -11,17 +11,29 @@ export default {
   async execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor(config.colors.primary)
-      .setTitle('🎮 FiveM Player Finder')
+      .setTitle('🎮 STRONAUT — FiveM Player Finder')
       .setDescription(`Cari pemain FiveM dengan mudah dan cepat\n${SEPARATOR}`)
       .addFields(
         {
-          name: `📋 Pencarian Player ${config.colors ? '*(Premium)*' : ''}`,
+          name: '🔍 Pencarian Player',
           value: [
             '`/allplayer <server>` — Lihat semua player online',
             '`/player <server> <nama>` — Cari player berdasarkan nama',
             '`/id <server> <id>` — Cari player berdasarkan ID',
             '`/loop <server> <nama> <interval>` — Auto monitoring player',
             '`/stoploop` — Menghentikan monitoring',
+          ].join('\n'),
+        },
+        {
+          name: SEPARATOR,
+          value: '\u200B',
+        },
+        {
+          name: '📡 Server Status',
+          value: [
+            '`/checkstatus <server>` — Status server',
+            '`/serverstatus <server>` — Detail lengkap server',
+            '`/serverlist` — Daftar server yang tersedia',
           ].join('\n'),
         },
         {
@@ -43,22 +55,9 @@ export default {
           value: '\u200B',
         },
         {
-          name: '🆓 Free Commands',
+          name: '🛠 Lainnya',
           value: [
-            '`/checkstatus` — Status server',
-            '`/serverstatus` — Detail server',
-            '`/serverlist` — Daftar server',
             '`/ping` — Bot latency',
-          ].join('\n'),
-        },
-        {
-          name: SEPARATOR,
-          value: '\u200B',
-        },
-        {
-          name: '🛠 Developer',
-          value: [
-            '`/dev` — Developer Info',
             '`/support` — Discord Support',
             '`/requestserver` — Request server baru',
           ].join('\n'),
@@ -73,17 +72,13 @@ export default {
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setLabel('💎 Subscribe')
-        .setStyle(ButtonStyle.Primary)
-        .setCustomId('help:subscribe'),
-      new ButtonBuilder()
         .setLabel('🔗 Support Server')
         .setStyle(ButtonStyle.Link)
         .setURL(config.discord.supportServer),
       new ButtonBuilder()
-        .setLabel('🌐 Website')
-        .setStyle(ButtonStyle.Link)
-        .setURL(config.discord.supportServer),
+        .setLabel('💎 Subscribe')
+        .setStyle(ButtonStyle.Primary)
+        .setCustomId('help:subscribe'),
     );
 
     await interaction.reply({ embeds: [embed], components: [row] });
