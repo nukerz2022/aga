@@ -1,6 +1,5 @@
 import { getAllPlayers } from '../services/fivem/playerService.js';
 import { createErrorEmbed } from '../utils/embed.js';
-import { requirePremium } from '../middlewares/premiumChecker.js';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { config } from '../config/config.js';
 import { SEPARATOR } from '../utils/embed.js';
@@ -11,9 +10,6 @@ export default {
   customId: 'allplayer',
 
   async execute(interaction) {
-    const { isPremium, embed: premiumEmbed } = requirePremium(interaction);
-    if (!isPremium) return interaction.reply({ embeds: [premiumEmbed], ephemeral: true });
-
     const [, action, cfx, pageStr] = interaction.customId.split(':');
     let page = parseInt(pageStr) || 1;
 

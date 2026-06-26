@@ -1,42 +1,43 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import { config } from '../config/config.js';
 import { SEPARATOR } from '../utils/embed.js';
-import { getDb } from '../database/db.js';
 
 export default {
-  customId: 'bayar',
+  customId: 'help',
 
   async execute(interaction) {
-    const [, paket] = interaction.customId.split(':');
-    const { prices, qrisImageUrl } = config.payment;
-    const price = prices[paket];
-    const labels = { '1month': '1 Bulan', '3months': '3 Bulan', lifetime: 'Lifetime' };
-    const label = labels[paket] || paket;
-
-    const db = getDb();
-    db.prepare(`INSERT INTO payments (discord_id, plan, amount, status) VALUES (?, ?, ?, 'pending')`)
-      .run(interaction.user.id, paket, price);
+    const { qrisImageUrl } = config.payment;
 
     const embed = new EmbedBuilder()
-      .setColor(config.colors.warning)
-      .setTitle('💳 Pembayaran QRIS')
-      .setDescription(`${SEPARATOR}\n\n📦 Paket: **${label}**\n💰 Nominal: **Rp ${price.toLocaleString('id-ID')}**\n\n${SEPARATOR}`)
-      .addFields({
-        name: '📝 Cara Bayar',
-        value: `1️⃣ Scan QRIS\n2️⃣ Transfer tepat **Rp ${price.toLocaleString('id-ID')}**\n3️⃣ Screenshot bukti\n4️⃣ Klik tombol di bawah`,
-      })
-      .setFooter({ text: `${config.bot.name} • ${interaction.user.tag}` })
+      .setColor(config.colors.primary)
+      .setTitle('💳 Support STRONAUT Bot')
+      .setDescription(
+        `${SEPARATOR}\n\nTerima kasih sudah menggunakan **STRONAUT Bot**!\n\nJika bot ini berguna buat kamu, kamu bisa bantu support pengembangan dengan donasi sukarela via QRIS.\n\n${SEPARATOR}`
+      )
+      .addFields(
+        {
+          name: '📝 Cara Donasi',
+          value: [
+            '1️⃣ Scan QRIS menggunakan e-wallet / mobile banking apapun',
+            '2️⃣ Masukkan nominal sesuai kemampuan kamu',
+            '3️⃣ Selesaikan pembayaran',
+            '4️⃣ Terima kasih sudah support! 🙏',
+          ].join('\n'),
+        },
+        {
+          name: '💡 Info',
+          value: '> Donasi bersifat **sukarela** dan tidak wajib.\n> Semua fitur bot tetap **gratis untuk semua** pengguna.',
+        },
+      )
+      .setFooter({ text: `${config.bot.name} • Support Kami` })
       .setTimestamp();
 
-    if (qrisImageUrl) embed.setImage(qrisImageUrl);
+    if (qrisImageUrl) {
+      embed.setImage(qrisImageUrl);
+    } else {
+      embed.addFields({ name: '⚠️ QRIS', value: 'QRIS belum dikonfigurasi. Hubungi admin.' });
+    }
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`konfirm:${paket}`)
-        .setLabel('✅ Sudah Bayar')
-        .setStyle(ButtonStyle.Success),
-    );
-
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    await interaction.reply({ embeds: [embed], ephemeral: true });
   },
 };

@@ -20,7 +20,7 @@ export default {
     const embed = new EmbedBuilder()
       .setColor(config.colors.primary)
       .setTitle('👨‍💻 Developer Info')
-      .setDescription(`${SEPARATOR}\n\n**${config.bot.name}** adalah Discord bot premium untuk mencari pemain FiveM secara real-time.\n\n${SEPARATOR}`)
+      .setDescription(`${SEPARATOR}\n\n**${config.bot.name}** adalah Discord bot serba guna untuk gaming — FiveM, SA-MP, Steam, Minecraft & more.\n\n${SEPARATOR}`)
       .addFields(
         { name: '🤖 Bot Name', value: `\`${config.bot.name}\``, inline: true },
         { name: '📦 Version', value: `\`v${config.bot.version}\``, inline: true },

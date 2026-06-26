@@ -23,12 +23,6 @@ export const config = {
   },
   payment: {
     qrisImageUrl: process.env.QRIS_IMAGE_URL || '',
-    adminId: process.env.PAYMENT_ADMIN_ID || '',
-    prices: {
-      '1month': parseInt(process.env.PRICE_1_MONTH) || 15000,
-      '3months': parseInt(process.env.PRICE_3_MONTHS) || 35000,
-      lifetime: parseInt(process.env.PRICE_LIFETIME) || 99000,
-    },
   },
   cache: {
     ttl: parseInt(process.env.CACHE_TTL) || 30000,
@@ -50,7 +44,6 @@ export const config = {
     player: 5,
     allplayer: 10,
     loop: 15,
-    subscribe: 5,
   },
 };
 

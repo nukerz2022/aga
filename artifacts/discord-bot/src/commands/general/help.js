@@ -81,7 +81,7 @@ export default {
       new ButtonBuilder()
         .setLabel('💳 Donasi QRIS')
         .setStyle(ButtonStyle.Success)
-        .setCustomId('help:subscribe'),
+        .setCustomId('help:bayar'),
       new ButtonBuilder()
         .setLabel('🔗 Support Server')
         .setStyle(ButtonStyle.Link)
