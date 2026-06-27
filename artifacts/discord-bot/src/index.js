@@ -4,6 +4,7 @@ import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { loadButtons, loadSelectMenus, loadModals } from './handlers/buttonHandler.js';
 import { initDb } from './database/db.js';
+import { startKeepaliveServer } from './server/keepalive.js';
 import logger from './utils/logger.js';
 import { config } from './config/config.js';
 
@@ -35,6 +36,9 @@ async function bootstrap() {
   await loadModals(client);
 
   await client.login(config.discord.token);
+
+  // Start HTTP keepalive server after login so /health shows correct guild count
+  startKeepaliveServer(client);
 }
 
 process.on('unhandledRejection', (err) => {

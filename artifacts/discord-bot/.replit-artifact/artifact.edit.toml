@@ -1,0 +1,12 @@
+version = "2"
+kind = "api"
+title = "STRONAUT Discord Bot"
+
+[[services]]
+name = "Discord Bot"
+localPort = 3000
+paths = ["/bot"]
+command = "cd artifacts/discord-bot && node src/index.js"
+
+[services.env]
+PORT = "3000"
