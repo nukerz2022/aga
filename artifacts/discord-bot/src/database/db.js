@@ -20,17 +20,11 @@ function wrapDb(sqliteDb) {
   return {
     prepare(sql) {
       return {
-        run(...args) {
-          sqliteDb.run(sql, args);
-        },
+        run(...args) { sqliteDb.run(sql, args); },
         get(...args) {
           const stmt = sqliteDb.prepare(sql);
           stmt.bind(args);
-          if (stmt.step()) {
-            const row = stmt.getAsObject();
-            stmt.free();
-            return row;
-          }
+          if (stmt.step()) { const row = stmt.getAsObject(); stmt.free(); return row; }
           stmt.free();
           return undefined;
         },
@@ -44,46 +38,27 @@ function wrapDb(sqliteDb) {
         },
       };
     },
-    exec(sql) {
-      sqliteDb.run(sql);
-    },
-    close() {
-      const data = sqliteDb.export();
-      fs.writeFileSync(dbPath, Buffer.from(data));
-      sqliteDb.close();
-    },
+    exec(sql) { sqliteDb.run(sql); },
+    close() { const data = sqliteDb.export(); fs.writeFileSync(dbPath, Buffer.from(data)); sqliteDb.close(); },
     _raw: sqliteDb,
-    _persist() {
-      const data = sqliteDb.export();
-      fs.writeFileSync(dbPath, Buffer.from(data));
-    },
+    _persist() { const data = sqliteDb.export(); fs.writeFileSync(dbPath, Buffer.from(data)); },
   };
 }
 
 export async function initDb() {
   if (db) return db;
-
   const SQL = await getSqlJs();
-
   let sqliteDb;
   if (fs.existsSync(dbPath)) {
-    const fileBuffer = fs.readFileSync(dbPath);
-    sqliteDb = new SQL.Database(fileBuffer);
+    sqliteDb = new SQL.Database(fs.readFileSync(dbPath));
   } else {
     sqliteDb = new SQL.Database();
   }
-
   db = wrapDb(sqliteDb);
-
   initSchema();
   seedServers();
   logger.info(`[Database] Connected: ${dbPath}`);
-
-  // Auto-persist every 30 seconds
-  setInterval(() => {
-    try { db._persist(); } catch {}
-  }, 30000);
-
+  setInterval(() => { try { db._persist(); } catch {} }, 30000);
   return db;
 }
 
@@ -105,9 +80,11 @@ function initSchema() {
     CREATE TABLE IF NOT EXISTS servers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       cfx_code TEXT UNIQUE NOT NULL,
+      cfx_real TEXT,
       name TEXT,
       alias TEXT,
       endpoint TEXT,
+      banner_url TEXT,
       is_active INTEGER DEFAULT 1,
       added_by TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -139,10 +116,10 @@ function initSchema() {
     );
   `);
 
-  // Migrate: add alias column if not exists (for existing DBs)
-  try { db.exec(`ALTER TABLE servers ADD COLUMN alias TEXT`); } catch {}
-  // Migrate: add endpoint column if not exists
-  try { db.exec(`ALTER TABLE servers ADD COLUMN endpoint TEXT`); } catch {}
+  // Migrations for existing DBs
+  for (const col of ['alias TEXT', 'endpoint TEXT', 'banner_url TEXT', 'cfx_real TEXT']) {
+    try { db.exec(`ALTER TABLE servers ADD COLUMN ${col}`); } catch {}
+  }
 
   logger.info('[Database] Schema initialized');
 }
@@ -150,78 +127,98 @@ function initSchema() {
 const SEED_SERVERS = [
   {
     cfx_code: '49.128.187.46:30120',
+    cfx_real: '',
     name: 'Satumimpi',
     alias: 'satumimpi,satu mimpi,smrp',
     endpoint: '49.128.187.46:30120',
+    banner_url: '',
   },
   {
     cfx_code: '160.187.141.169:30120',
+    cfx_real: '',
     name: 'Kampoeng RP',
     alias: 'kampoengrp,kampoeng rp,kampung rp,krp',
     endpoint: '160.187.141.169:30120',
+    banner_url: '',
   },
   {
     cfx_code: '49.128.187.82:30120',
+    cfx_real: '',
     name: 'Kisah Nusantara',
     alias: 'kisahnusantara,kisah nusantara,kisa,knrp',
     endpoint: '49.128.187.82:30120',
+    banner_url: '',
   },
   {
     cfx_code: '49.128.187.110:30120',
+    cfx_real: '',
     name: 'Nusa V',
     alias: 'nusav,nusa v,nusa5',
     endpoint: '49.128.187.110:30120',
+    banner_url: '',
   },
   {
     cfx_code: '31.58.143.101:30120',
+    cfx_real: '',
     name: 'Kota Kita',
     alias: 'kotakita,kota kita,kkrp',
     endpoint: '31.58.143.101:30120',
+    banner_url: '',
   },
   {
     cfx_code: '31.58.143.12:30120',
+    cfx_real: '',
     name: 'ASE STATE',
     alias: 'asestate,ase state,ase',
     endpoint: '31.58.143.12:30120',
+    banner_url: '',
   },
   {
     cfx_code: '49.128.187.58:30120',
+    cfx_real: '',
     name: 'Garuda Prime',
     alias: 'garudaprime,garuda prime,garuda,gprp',
     endpoint: '49.128.187.58:30120',
+    banner_url: '',
   },
   {
     cfx_code: '49.128.187.86:30120',
+    cfx_real: '',
     name: 'Rumah Kita',
     alias: 'rumahkita,rumah kita,rkrp',
     endpoint: '49.128.187.86:30120',
+    banner_url: '',
   },
   {
     cfx_code: 'kota.indopride.id:30120',
+    cfx_real: '',
     name: 'Indopride',
     alias: 'indopride,indo pride,idrp',
     endpoint: 'kota.indopride.id:30120',
+    banner_url: '',
   },
   {
     cfx_code: 'private-placeholder.cfx.re',
+    cfx_real: 'private-placeholder.cfx.re',
     name: 'IME',
     alias: 'ime',
     endpoint: 'private-placeholder.cfx.re',
+    banner_url: '',
   },
 ];
 
 function seedServers() {
   for (const s of SEED_SERVERS) {
     try {
-      db.prepare(
-        `INSERT OR IGNORE INTO servers (cfx_code, name, alias, endpoint, is_active, added_by)
-         VALUES (?, ?, ?, ?, 1, 'system')`
-      ).run(s.cfx_code, s.name, s.alias, s.endpoint);
-
-      // Update alias/name if server already exists (keeps endpoint fresh)
-      db.prepare(
-        `UPDATE servers SET name = ?, alias = ?, endpoint = ? WHERE cfx_code = ?`
-      ).run(s.name, s.alias, s.endpoint, s.cfx_code);
+      db.prepare(`
+        INSERT OR IGNORE INTO servers (cfx_code, cfx_real, name, alias, endpoint, banner_url, is_active, added_by)
+        VALUES (?, ?, ?, ?, ?, ?, 1, 'system')
+      `).run(s.cfx_code, s.cfx_real, s.name, s.alias, s.endpoint, s.banner_url);
+      // Update alias/name — but preserve banner_url if already set by admin
+      db.prepare(`
+        UPDATE servers SET name = ?, alias = ?, endpoint = ?, cfx_real = COALESCE(NULLIF(cfx_real,''), ?)
+        WHERE cfx_code = ?
+      `).run(s.name, s.alias, s.endpoint, s.cfx_real, s.cfx_code);
     } catch {}
   }
   logger.info('[Database] Servers seeded');

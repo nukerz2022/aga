@@ -9,6 +9,11 @@
             "date": 1782478485708,
             "name": "/home/runner/workspace/artifacts/discord-bot/src/logs/error-2026-06-26.log",
             "hash": "80ac8383497ef1f3d0b354d7bbdc076904c2b57fcd3ac569df5fbf0b7fbc5a5b"
+        },
+        {
+            "date": 1782525876005,
+            "name": "/home/runner/workspace/artifacts/discord-bot/src/logs/error-2026-06-27.log",
+            "hash": "1e91ab7cb3f1aec9c2f2f02f8d1d428bc43b0bf89ceac2c32ade25d6493217db"
         }
     ],
     "hashType": "sha256"

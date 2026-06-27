@@ -4,39 +4,22 @@ import { config } from '../../config/config.js';
 import logger from '../../utils/logger.js';
 import { getDb } from '../../database/db.js';
 
-/**
- * Resolve an alias or cfx_code to a DB row.
- */
 function resolveFromDb(input) {
   try {
     const db = getDb();
     const lower = input.toLowerCase().trim();
-
-    // Exact cfx_code match
     let row = db.prepare(`SELECT * FROM servers WHERE cfx_code = ? AND is_active = 1`).get(input);
     if (row) return row;
-
-    // Alias match
     const servers = db.prepare(`SELECT * FROM servers WHERE is_active = 1`).all();
     for (const s of servers) {
       if (!s.alias) continue;
-      const aliases = s.alias.split(',').map(a => a.trim().toLowerCase());
-      if (aliases.includes(lower)) return s;
+      if (s.alias.split(',').map(a => a.trim().toLowerCase()).includes(lower)) return s;
     }
-
-    // Partial name match
-    row = db.prepare(
-      `SELECT * FROM servers WHERE is_active = 1 AND LOWER(name) LIKE ? LIMIT 1`
-    ).get(`%${lower}%`);
+    row = db.prepare(`SELECT * FROM servers WHERE is_active = 1 AND LOWER(name) LIKE ? LIMIT 1`).get(`%${lower}%`);
     return row || null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-/**
- * Check if input looks like a direct endpoint (IP:port or domain:port or CFX private URL).
- */
 function asDirectEndpoint(input) {
   if (/^\d{1,3}(\.\d{1,3}){3}:\d+$/.test(input)) return input;
   if (/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:\d+$/.test(input)) return input;
@@ -44,74 +27,68 @@ function asDirectEndpoint(input) {
   return null;
 }
 
-/**
- * Resolve input → { serverData, endpoint, name }
- * Priority: DB alias → FiveM API (via endpoint as code) → direct endpoint → FiveM API (standard cfxCode)
- */
 export async function getServerEndpoint(input) {
   const cacheKey = `server:${input}`;
   if (serverCache.has(cacheKey)) return serverCache.get(cacheKey);
 
-  // 1. Resolve from DB
   const dbRow = resolveFromDb(input);
-  const endpoint = dbRow?.endpoint || asDirectEndpoint(input);
 
-  if (endpoint) {
-    // Try FiveM master server API with endpoint as identifier (HTTPS — works on Replit)
+  // Use real CFX code if available (allows FiveM API to work for player data)
+  const cfxReal = dbRow?.cfx_real?.trim();
+  if (cfxReal) {
     try {
-      const serverData = await fetchServerInfo(endpoint);
+      const serverData = await fetchServerInfo(cfxReal);
       if (serverData?.Data) {
-        const result = { serverData, endpoint, name: dbRow?.name };
+        const endpoint = serverData.Data.connectEndPoints?.[0] || dbRow.endpoint;
+        const result = { serverData, endpoint, dbRow };
         serverCache.set(cacheKey, result, config.cache.serverTtl);
         return result;
       }
     } catch (err) {
-      logger.warn(`[PlayerService] FiveM API failed for ${endpoint}: ${err.message}`);
+      logger.warn(`[PlayerService] CFX API failed for ${cfxReal}: ${err.message}`);
     }
+  }
 
-    // FiveM API didn't have it — return basic info (direct connection will be attempted for players)
+  const endpoint = dbRow?.endpoint || asDirectEndpoint(input);
+  if (endpoint) {
+    // Try FiveM API with endpoint as key
+    try {
+      const serverData = await fetchServerInfo(endpoint);
+      if (serverData?.Data) {
+        const result = { serverData, endpoint, dbRow };
+        serverCache.set(cacheKey, result, config.cache.serverTtl);
+        return result;
+      }
+    } catch {}
+
+    // Return basic stub — direct /players.json will be tried later
     const result = {
-      serverData: {
-        Data: {
-          hostname: dbRow?.name || endpoint,
-          connectEndPoints: [endpoint],
-          clients: 0,
-          sv_maxclients: 64,
-        },
-      },
+      serverData: { Data: { hostname: dbRow?.name || endpoint, connectEndPoints: [endpoint], clients: null, sv_maxclients: 64 } },
       endpoint,
-      name: dbRow?.name,
+      dbRow,
     };
     serverCache.set(cacheKey, result, config.cache.serverTtl);
     return result;
   }
 
-  // 2. Standard FiveM API with cfxCode
+  // Standard FiveM API path (user typed a cfx code directly)
   const serverData = await fetchServerInfo(input);
   const ep = serverData?.Data?.connectEndPoints?.[0];
   if (!ep) throw new Error('Endpoint server tidak ditemukan di FiveM API');
-
-  const result = { serverData, endpoint: ep };
+  const result = { serverData, endpoint: ep, dbRow: null };
   serverCache.set(cacheKey, result, config.cache.serverTtl);
   return result;
 }
 
-/**
- * Get all players for a server.
- * First tries to use Data.players from FiveM API (no port 30120 needed).
- * Falls back to direct /players.json if API data is unavailable.
- */
 export async function getAllPlayers(input) {
   const cacheKey = `players:${input}`;
   if (playerCache.has(cacheKey)) return playerCache.get(cacheKey);
 
-  const { serverData, endpoint, name } = await getServerEndpoint(input);
+  const { serverData, endpoint, dbRow } = await getServerEndpoint(input);
 
-  // Prefer player list from FiveM master server API (avoids direct port connection)
+  // Prefer FiveM API player list (no port 30120 needed)
   let players = serverData?.Data?.players;
-
   if (!Array.isArray(players) || players.length === 0) {
-    // Fallback: try direct HTTP to game server
     try {
       players = await fetchPlayers(endpoint);
     } catch (err) {
@@ -120,24 +97,22 @@ export async function getAllPlayers(input) {
     }
   }
 
-  const result = { players, serverData, endpoint, name };
+  const result = { players, serverData, endpoint, dbRow };
   playerCache.set(cacheKey, result, config.cache.ttl);
   return result;
 }
 
 export async function findPlayerByName(input, name) {
-  const { players, serverData, endpoint } = await getAllPlayers(input);
-  const found = players.filter(p =>
-    p.name?.toLowerCase().includes(name.toLowerCase())
-  );
-  return { found, serverData, endpoint };
+  const { players, serverData, endpoint, dbRow } = await getAllPlayers(input);
+  const found = players.filter(p => p.name?.toLowerCase().includes(name.toLowerCase()));
+  return { found, serverData, endpoint, dbRow };
 }
 
 export async function findPlayerById(input, playerId) {
-  const { players, serverData, endpoint } = await getAllPlayers(input);
+  const { players, serverData, endpoint, dbRow } = await getAllPlayers(input);
   const id = parseInt(playerId, 10);
   const found = players.find(p => p.id === id);
-  return { found: found ? [found] : [], serverData, endpoint };
+  return { found: found ? [found] : [], serverData, endpoint, dbRow };
 }
 
 export function getPlayerIdentifiers(player) {
@@ -156,14 +131,10 @@ export function getPlayerIdentifiers(player) {
 export async function autocompleteServer(query, db) {
   try {
     const lower = `%${query.toLowerCase()}%`;
-    const servers = db.prepare(
-      `SELECT cfx_code, name, alias, endpoint FROM servers
-       WHERE is_active = 1
-         AND (LOWER(cfx_code) LIKE ? OR LOWER(name) LIKE ? OR LOWER(alias) LIKE ?)
-       LIMIT 25`
-    ).all(lower, lower, lower);
-    return servers;
-  } catch {
-    return [];
-  }
+    return db.prepare(`
+      SELECT cfx_code, name, alias, endpoint, banner_url FROM servers
+      WHERE is_active = 1 AND (LOWER(cfx_code) LIKE ? OR LOWER(name) LIKE ? OR LOWER(alias) LIKE ?)
+      LIMIT 25
+    `).all(lower, lower, lower);
+  } catch { return []; }
 }
